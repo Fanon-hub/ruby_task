@@ -1,4 +1,4 @@
-# TODO: モジュールのテキストのリンクを添える
+# モジュールの役割について確認したい場合は[https://diver.diveintocode.jp/curriculums/2360]のテキストを参考にしてください。
 require "kosi"
 require_relative "item"
 
