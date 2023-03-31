@@ -36,7 +36,6 @@ jobs:
       - name: Create Evaluation File
         run: |
           rm -rf spec
-          echo -e "---\ntitle: ディープロ：課題評価に関するご連絡\n---\n## 課題の評価が実行できませんでした。\n### 以下の項目を確認してください。\n- RSpecの実行に必要なgem（rspec-railsとrexml）をインストールしていますか？\n- ローカルでRspecを実行できていますか？\n**上記を確認して解決しない場合、お手数ですが、ディープロの質問投稿よりこちらのリポジトリのURLを投稿いただき、課題の評価が行われない旨をお知らせください。**" > .github/execution_error_template.md
           git clone https://github.com/diveintocode-corp/cdp_web_ruby_oop_task_evaluation_code.git spec
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -53,6 +52,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           filename: .github/feedback_template.md
+      - name: Create Error File
+        if: failure()
+        run: |
+          echo -e "---\ntitle: ディープロ：課題評価に関するご連絡\n---\n## 課題の評価が実行できませんでした。\n### 以下の項目を確認してください。\n- クローン元のソースコードにあらかじめ用意されているGemfileのGemを削除したり、バージョンを変更したりしていませんか？\n- カリキュラムで推奨されているものと異なるバージョンのRubyを使用していませんか？\n- カリキュラムで推奨されているものと異なるバージョンのNode.jsを使用していませんか？\n\n**上記を確認して解決しない場合、お手数ですが、ディープロの質問投稿よりこちらのリポジトリのURLを投稿いただき、課題の評価が行われない旨をお知らせください。**" > .github/execution_error_template.md
       - uses: JasonEtco/create-an-issue@v2
         if: failure()
         env:
