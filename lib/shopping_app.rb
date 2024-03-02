@@ -3,16 +3,16 @@ require_relative "shopping_app/item"
 require_relative "shopping_app/customer"
 
 seller = Seller.new("DICストア")
-10.times{ Item.new("CPU", 40830, seller) }
-10.times{ Item.new("メモリー", 13880, seller) }
-10.times{ Item.new("マザーボード", 28980, seller) }
-10.times{ Item.new("電源ユニット", 8980, seller) }
-10.times{ Item.new("PCケース", 8727, seller) }
-10.times{ Item.new("3.5インチHDD", 10980, seller) }
-10.times{ Item.new("2.5インチSSD", 13370, seller) }
-10.times{ Item.new("M.2 SSD", 12980, seller) }
-10.times{ Item.new("CPUクーラー", 13400, seller) }
-10.times{ Item.new("グラフィックボード", 23800, seller) }
+10.times{ Item.new(1, "CPU", 40830, seller) }
+10.times{ Item.new(2, "メモリー", 13880, seller) }
+10.times{ Item.new(3, "マザーボード", 28980, seller) }
+10.times{ Item.new(4, "電源ユニット", 8980, seller) }
+10.times{ Item.new(5, "PCケース", 8727, seller) }
+10.times{ Item.new(6, "3.5インチHDD", 10980, seller) }
+10.times{ Item.new(7, "2.5インチSSD", 13370, seller) }
+10.times{ Item.new(8, "M.2 SSD", 12980, seller) }
+10.times{ Item.new(9, "CPUクーラー", 13400, seller) }
+10.times{ Item.new(10, "グラフィックボード", 23800, seller) }
 
 puts "🤖 あなたの名前を教えてください"
 customer = Customer.new(gets.chomp)

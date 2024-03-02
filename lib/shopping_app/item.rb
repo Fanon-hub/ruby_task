@@ -1,9 +1,10 @@
 class Item
-  attr_reader :name, :price
+  attr_reader :number, :name, :price
 
   @@instances = []
 
-  def initialize(name, price, owner=nil)
+  def initialize(number, name, price, owner=nil)
+    @number = number
     @name = name
     @price = price
     self.owner = owner
@@ -13,7 +14,7 @@ class Item
   end
 
   def label
-    { name: name, price: price }
+    { number: number, name: name, price: price }
   end
 
   def self.all
