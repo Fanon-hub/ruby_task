@@ -36,7 +36,7 @@ jobs:
       - name: Create Evaluation File
         run: |
           rm -rf spec
-          git clone https://github.com/diveintocode-corp/cdp_web_ruby_oop_task_evaluation_code.git spec
+          git clone https://github.com/seiyamiyaoka/cdp_web_ruby_oop_task_evaluation_code.git spec
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
       - name: Create Feedback
