@@ -1,4 +1,5 @@
-require "terminal-table"  # If not already there
+ require_relative "ownable"
+ require "terminal-table" 
 
 class Item
   include Ownable
@@ -7,7 +8,7 @@ class Item
 
   attr_reader :name, :price  # Read-only: no #name= or #price= setters
 
-  attr_accessor :number, :quantity  # Keep these as writable
+  attr_accessor :number, :quantity  
 
   def initialize(number, name, price, quantity = 1, owner = nil)
     @number = number
