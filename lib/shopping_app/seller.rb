@@ -1,30 +1,30 @@
 require "terminal-table"
-require_relative "ownable"
+require_relative "user"   
+require_relative "item"
 
-class Seller
-  include Ownable
-  attr_reader :name, :wallet, :items
+class Seller < User
+  attr_reader :items
 
   def initialize(name)
-    @name = name
-    @wallet = Wallet.new(self)
-    # Pre-populate with sample stock items (adjust as needed)
+    super(name)               # Initializes User with name and wallet
+    # Pre-populate stock items
     @items = [
-      Item.new(1, "Apple", 100, 10),      # ID 1, price 100, stock 10
-      Item.new(2, "Banana", 50, 20),      # ID 2, price 50, stock 20
-      Item.new(3, "Orange", 80, 5)        # ID 3, price 80, stock 5 (enough for qty 2)
+      Item.new(1, "Apple", 100, 10, self),
+      Item.new(2, "Banana", 50, 20, self),
+      Item.new(3, "Orange", 80, 5, self)
     ]
   end
 
   def add_item(item)
     @items << item
+    item.owner = self         # Makes sure the new items belongs to this seller
   end
 
   def items_list
     if @items.empty?
       puts "No items available."
     else
-      rows = @items.map(&:label) # Item#label returns [id, name, price, quantity]
+      rows = @items.map(&:label)
       table = Terminal::Table.new(
         headings: ["ID", "Name", "Price", "Quantity"],
         rows: rows

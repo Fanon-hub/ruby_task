@@ -1,48 +1,35 @@
-# モジュールの役割について確認したい場合は[https://diver.diveintocode.jp/curriculums/2360]のテキストを参考にしてください。
+# Refer to the text at [https://diver.diveintocode.jp/curriculums/2360] if you want to check the role of the module.
 require "kosi"
 require_relative "item"
 
-# このモジュールをインクルードすると、自身の所有するItemインスタンスを操れるようになります。
+# By including this module, you can manipulate your own Item instances.
 module ItemManager
-  def items # 自身の所有する（自身がオーナーとなっている）全てのItemインスタンスを返します。
-    Item.all.select{|item| item.owner == self }
+  def items # Returns all Item instances that you own (i.e., for which you are the owner).
+    Item.instances.select { |item| item.owner == self }
   end
 
-  def pick_items(number, quantity) # numberと対応した自身の所有するItemインスタンスを指定されたquantitiy分返します。
-    items = stock.find{|stock| stock[:label][:number] == number }&.dig(:items)
-    return if items.nil? || items.size < quantity
-    items.slice(0, quantity)
+  def pick_items(number, quantity) # Returns the specified quantity of your own Item instances corresponding to the number.
+    return nil if quantity <= 0
+
+    matching_items = items.select { |item| item.number == number }
+    return nil if matching_items.empty? || matching_items.size < quantity
+
+    matching_items[0, quantity]  # Return the first quantity items
   end
 
-  def items_list # 自身の所有するItemインスタンスの在庫状況を、["番号", "商品名", "金額", "数量"]という列でテーブル形式にして出力します。
-    kosi = Kosi::Table.new({header: %w{商品番号 商品名 金額 数量}}) # Gemgileに"kosi"のURLを記載
+  def items_list # Outputs the inventory status of your owned Item instances in a table format with columns ["Item Number", "Item Name", "Amount", "Quantity"].
+    kosi = Kosi::Table.new({ header: %w{Item\ Number Item\ Name Amount Quantity} }) # Specify the URL of "kosi" in the Gemfile
     print kosi.render(
-      stock.map do |stock|
-        [
-          stock[:label][:number],
-          stock[:label][:name],
-          stock[:label][:price],
-          stock[:items].size
-        ]
-      end
+      items
+        .group_by { |item| item.label }  # Group by label hash
+        .map do |label, group_items|
+          [
+            label[:number],
+            label[:name],
+            label[:price],
+            group_items.size  # Quantity as count of instances
+          ]
+        end
     )
   end
-
-  private
-
-  def stock # 自身の所有するItemインスタンスの在庫状況を返します。
-    items
-      .group_by{|item| item.label } # Item#labelで同じ値を返すItemインスタンスで分類します。
-      .map do |label_and_items|
-        {
-          label: {
-            number: label_and_items[0][:number],
-            name: label_and_items[0][:name],
-            price: label_and_items[0][:price],
-          },
-          items: label_and_items[1], # このitemsの中に、分類されたItemインスタンスを格納します。
-        }
-      end
-  end
-
 end
