@@ -1,40 +1,38 @@
 require "terminal-table"
-require_relative "ownable"  # Load Ownable module
-require_relative "item_manager"  # Load ItemManager module
+require_relative "ownable"
+require_relative "item_manager"
 
 class Cart
-  include Ownable  # Include Ownable for @items and add_item
-  include ItemManager  # Include ItemManager for items management
+  include Ownable   # Owner functionality
+  include ItemManager  # Access #items if needed
 
-  attr_reader :owner  # Keep @owner as reader
+  attr_reader :owner
 
   def initialize(owner)
     @owner = owner
-    # @items is now handled by Ownable (array of Item instances)
-    # Override ItemManager#items to manage cart-specific items
-    @cart_items = {}  # Internal hash: { id => { item: Item, quantity: n } }
+    @cart_items = {}  # { item_id => { item: Item, quantity: n } }
   end
 
-  # Override ItemManager#items to return cart contents as Item instances
+  # Return cart contents as an array of Item instances
   def items
-    @cart_items.values.flat_map do |entry|
-      Array.new(entry[:quantity]) { entry[:item] }  # Expand to individual Item instances
-    end
+    @cart_items.values.flat_map { |entry| Array.new(entry[:quantity], entry[:item]) }
   end
 
+  # Add items to cart
   def add(item, quantity = 1)
     if @cart_items[item.id]
       @cart_items[item.id][:quantity] += quantity
     else
       @cart_items[item.id] = { item: item, quantity: quantity }
     end
-    # Since items now uses @cart_items, no need to store in @items explicitly
   end
 
+  # Total price of all items in the cart
   def total_amount
-    @cart_items.values.sum { |entry| entry[:item].price * entry[:quantity] }  # Total price of items in cart
+    @cart_items.values.sum { |entry| entry[:item].price * entry[:quantity] }
   end
 
+  # Display cart contents
   def items_list
     if @cart_items.empty?
       puts "Cart is empty."
@@ -51,33 +49,32 @@ class Cart
     end
   end
 
+  # Checkout: transfer money and ownership
   def check_out
     total = total_amount
-    if owner.wallet.balance >= total
-      # Transfer purchase amount from cart owner to item owners
-      @cart_items.each_value do |entry|
-        # Deposit to the original item owner's wallet (seller)
-        entry[:item].owner.wallet.deposit(entry[:item].price * entry[:quantity])
-      end
-      owner.wallet.withdraw(total)  # Deduct total from cart owner (customer)
-
-      # Transfer ownership: Add all cart items to cart owner via Ownable#add_item
-      items.each do |item|  # Uses overridden #items
-        new_item = Item.new(
-          item.id,
-          item.name,
-          item.price,
-          1,  # Each transferred item has qty=1
-          owner  # New owner: cart owner (customer)
-        )
-        owner.add_item(new_item)  # Transfer to cart owner's @items
-      end
-
-      @cart_items.clear  # Empty the cart contents
-      @items.clear if @items  # Also clear Ownable @items if populated
-      puts "🎉 Checkout successful!"
-    else
+    if owner.wallet.balance < total
       puts "⚠️ Not enough balance to complete checkout."
+      return
     end
+
+    # Transfer money to item owners
+    @cart_items.each_value do |entry|
+      seller = entry[:item].owner
+      seller.wallet.deposit(entry[:item].price * entry[:quantity])
+    end
+
+    # Deduct from cart owner
+    owner.wallet.withdraw(total)
+
+    # Transfer ownership
+    items.each do |item|
+      new_item = Item.new(item.id, item.name, item.price, 1, owner)
+      owner.add_item(new_item)
+    end
+
+    # Clear the cart
+    @cart_items.clear
+
+    puts "🎉 Checkout successful!"
   end
 end
