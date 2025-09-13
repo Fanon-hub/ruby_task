@@ -5,7 +5,7 @@ require_relative "wallet"
 require_relative "item"
 require_relative "ownable"
 
-class Seller 
+class Seller > User
   include Ownable
   attr_reader :name, :wallet
 
