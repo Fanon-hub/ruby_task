@@ -45,12 +45,13 @@ while !end_shopping
   quantity = gets.to_i
 
   items = seller.pick_items(id, quantity)
-  if items
-    items.each { |item| customer.cart.add(item) }
-    puts "✅ Added #{quantity} × #{items.first.name} to your cart."
-  else
-    puts "⚠️ Item not found or insufficient stock."
-  end
+if items
+  # pass the picked items array to the cart in one call (cart.add handles arrays)
+  customer.cart.add(items, quantity)
+  puts "✅ Added #{quantity} × #{items.first.name} to your cart."
+else
+  puts "⚠️ Item not found or insufficient stock."
+end
 
   puts "\n🛒 Cart contents"
   customer.cart.items_list

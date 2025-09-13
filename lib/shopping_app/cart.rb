@@ -3,77 +3,69 @@ require_relative "ownable"
 require_relative "item_manager"
 
 class Cart
-  include ItemManager
-  include Ownable
+  include Ownable       # keep Ownable for @items/ownership convenience
+  include ItemManager   # ItemManager#items will be used as the canonical items list
 
   attr_reader :owner
 
   def initialize(owner)
     @owner = owner
-    # store items keyed by item number:
-    # { number => { item: Item (one representative copy), quantity: n, seller: seller } }
-    @cart_items = {}
+    # array of Item objects owned temporarily by the cart (owner = self)
+    @items = []
+    # mapping to remember original seller for each cart item
+    @item_sources = {} # { cart_item.object_id => seller }
   end
 
-  # Return Item objects currently in the cart (never nil)
-  def items
-    @cart_items.values.flat_map { |entry| Array.new(entry[:quantity], entry[:item]) }
-  end
-
-  # Add either an Array (picked items from seller) or a single Item
-  # items_or_item:
-  #  - Array: result of Seller#pick_items(number, qty)
-  #  - Item: a single Item
+  # For convenience tests may inspect @items directly; ItemManager#items uses Item.instances
+  # and will pick up items whose owner == self (cart), since we create cart copies with owner = self.
+  # Add picks either an Array (seller.pick_items) or a single Item.
   def add(items_or_item, quantity = 1)
     if items_or_item.is_a?(Array)
       items_array = items_or_item
       return if items_array.empty? || items_array.size < quantity
 
       template = items_array.first
-      number = template.number
       seller = template.owner
 
-      if @cart_items[number]
-        @cart_items[number][:quantity] += quantity
-      else
-        # store a single representative copy (owner = cart) and keep seller reference
-        rep = Item.new(template.number, template.name, template.price, 1, self)
-        @cart_items[number] = { item: rep, quantity: quantity, seller: seller }
+      quantity.times do |i|
+        stock_item = items_array[i] || template
+        cart_copy = Item.new(stock_item.number, stock_item.name, stock_item.price, 1, self)
+        @items << cart_copy
+        @item_sources[cart_copy.object_id] = seller
       end
 
     elsif items_or_item.is_a?(Item)
       item = items_or_item
-      number = item.number
       seller = item.owner
 
-      if @cart_items[number]
-        @cart_items[number][:quantity] += quantity
-      else
-        rep = Item.new(item.number, item.name, item.price, 1, self)
-        @cart_items[number] = { item: rep, quantity: quantity, seller: seller }
+      quantity.times do
+        cart_copy = Item.new(item.number, item.name, item.price, 1, self)
+        @items << cart_copy
+        @item_sources[cart_copy.object_id] = seller
       end
 
     else
-      # invalid input — ignore
+      # invalid input; ignore
       return
     end
   end
 
-  # Total price for all items in the cart
+  # total price for all items currently in the cart
   def total_amount
-    @cart_items.values.sum { |e| e[:item].price * e[:quantity] }
+    @items.sum { |i| i.price }
   end
 
-  # Pretty-print cart contents
+  # pretty-print cart contents
   def items_list
-    if @cart_items.empty?
+    if @items.empty?
       puts "Cart is empty."
       return
     end
 
-    rows = @cart_items.values.map do |entry|
-      item = entry[:item]
-      [item.number, item.name, item.price, entry[:quantity]]
+    grouped = @items.group_by(&:number)
+    rows = grouped.map do |number, group|
+      it = group.first
+      [it.number, it.name, it.price, group.size]
     end
 
     table = Terminal::Table.new(headings: ["ID", "Name", "Price", "Quantity"], rows: rows)
@@ -81,13 +73,13 @@ class Cart
   end
 
   # Checkout:
-  #  - ensure buyer has enough funds
-  #  - withdraw from buyer
-  #  - deposit each seller their share
-  #  - transfer ownership of purchased items to buyer
+  #  - ensure buyer has enough balance; withdraw first
+  #  - pay each seller their aggregated amount
+  #  - transfer ownership to buyer (create owned items for buyer)
   #  - clear the cart
   def check_out
     total = total_amount
+    # withdraw returns amount on success, nil otherwise (per your Wallet implementation)
     unless owner.wallet.withdraw(total)
       puts "⚠️ Not enough balance to complete checkout."
       return
@@ -95,9 +87,9 @@ class Cart
 
     # aggregate payouts per seller
     payouts = Hash.new(0)
-    @cart_items.each_value do |entry|
-      seller = entry[:seller]
-      payouts[seller] += entry[:item].price * entry[:quantity]
+    @items.each do |cart_item|
+      seller = @item_sources[cart_item.object_id]
+      payouts[seller] += cart_item.price
     end
 
     # pay sellers
@@ -106,17 +98,15 @@ class Cart
       seller.wallet.deposit(amount)
     end
 
-    # transfer ownership to buyer
-    @cart_items.each_value do |entry|
-      entry[:quantity].times do
-        # create a new Item for the buyer (or reuse rep and set qty 1 repeatedly)
-        purchased = Item.new(entry[:item].number, entry[:item].name, entry[:item].price, 1, owner)
-        owner.add_item(purchased)
-      end
+    # transfer ownership to buyer: create new Item instances owned by buyer
+    @items.each do |cart_item|
+      purchased = Item.new(cart_item.number, cart_item.name, cart_item.price, 1, owner)
+      owner.add_item(purchased)
     end
 
-    # empty the cart
-    @cart_items.clear
+    # clear internal state and helper mapping
+    @items.clear
+    @item_sources.clear
 
     puts "🎉 Checkout successful!"
   end
