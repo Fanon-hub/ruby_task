@@ -20,7 +20,7 @@ class Item
     @number
   end
 
-  # Return a hash of this item's label data
+  # Returs a hash of this item's label data
   def label
     { name: @name, price: @price }
   end

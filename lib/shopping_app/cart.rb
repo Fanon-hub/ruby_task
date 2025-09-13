@@ -93,10 +93,10 @@ class Cart
       item_owner.wallet.deposit(amount)
     end
 
-    # Transfer ownership of existing cart items to cart owner
+    # Transfers ownership of existing cart items to cart owner
     @items.each do |cart_item|
-      cart_item.owner = owner  # Update owner
-      owner.add_item(cart_item)  # Store in buyer's @items (via Ownable)
+      cart_item.owner = owner  # Updates owner
+      owner.add_item(cart_item)  # Stores in buyer's @items (via Ownable)
     end
 
     # Empty cart contents

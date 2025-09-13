@@ -2,7 +2,7 @@ require_relative "item"
 require "terminal-table"
 
 module ItemManager
-  # Return all Item objects for which `self` is the owner.
+  # Returns all Item objects for which `self` is the owner.
   # Uses Item.instances so this works for Seller, Customer, Cart, etc.
   def items
     Item.instances.select { |i| i.owner == self }
