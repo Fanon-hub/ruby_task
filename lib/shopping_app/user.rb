@@ -1,3 +1,4 @@
+# user class 
 require_relative "item_manager"
 require_relative "wallet"
 
@@ -9,7 +10,6 @@ class User
 
   def initialize(name)
     @name = name
-    @wallet = Wallet.new(self) # UserインスタンスまたはUserを継承したクラスのインスタンスは生成されると、自身をオーナーとするウォレットを持ちます。
+    @wallet = Wallet.new(self)
   end
-
 end

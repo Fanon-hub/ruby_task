@@ -1,7 +1,5 @@
-require_relative "ownable"
-
+# item class
 class Item
-  include Ownable
   attr_reader :name, :price
   attr_accessor :number, :quantity, :owner
 
@@ -20,12 +18,10 @@ class Item
     @number
   end
 
-  # Returns a hash of this item's label data
   def label
     { name: @name, price: @price }
   end
 
-  # All instantiated Item objects
   def self.instances
     @@instances
   end
