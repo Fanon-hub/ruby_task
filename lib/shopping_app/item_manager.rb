@@ -1,5 +1,5 @@
 require_relative "item"
-require "kosi"
+require "terminal-table"
 
 module ItemManager
   # Return all Item objects for which `self` is the owner.
@@ -28,7 +28,7 @@ module ItemManager
       [first_item.number, first_item.name, first_item.price, group.size]
     end
 
-    table = Kosi::Table.new(header: %w{Item\ Number Item\ Name Amount Quantity})
-    print table.render(rows)
+    table = Terminal::Table.new(headings: ["Item Number", "Item Name", "Amount", "Quantity"], rows: rows)
+    puts table
   end
 end
