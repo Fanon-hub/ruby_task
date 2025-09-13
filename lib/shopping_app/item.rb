@@ -1,4 +1,4 @@
-require_relative "ownable" 
+require_relative "ownable"
 
 class Item
   include Ownable
@@ -20,7 +20,7 @@ class Item
     @number
   end
 
-  # Returs a hash of this item's label data
+  # Returns a hash of this item's label data
   def label
     { name: @name, price: @price }
   end

@@ -1,5 +1,4 @@
 require_relative "item"
-require "terminal-table"
 
 module ItemManager
   # Returns all Item objects for which `self` is the owner.
@@ -15,6 +14,19 @@ module ItemManager
     owned_items = items.select { |i| i.number == number }
     return nil if owned_items.empty? || owned_items.size < quantity
     owned_items[0, quantity]
+  end
+
+  # NEW: Add multiples of an item with quantity management (handles edge cases like nil/invalid)
+  def add_item_with_quantity(item, quantity)
+    return nil unless item.is_a?(Item) && quantity.is_a?(Integer) && quantity.positive?
+    quantity.times do
+      # Duplicate to avoid modifying original
+      dup_item = item.dup
+      dup_item.owner = self
+      Item.instances << dup_item  # Add to global instances
+      add_item(dup_item)  # Use Ownable's add_item
+    end
+    items.last(quantity)  # Return the added ones
   end
 
   # Display grouped items in a table, grouped by product number (label), with quantities

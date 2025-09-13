@@ -1,14 +1,14 @@
 
 module Ownable
-  attr_reader :items
-  # attr_accessor :owner 
-
-  def items
-    @items ||= []  # Initialize empty array if not already set
-  end
+  attr_accessor :owner
 
   def add_item(item)
     @items ||= []
     @items << item
+    item.owner = self if item.respond_to?(:owner=)
+  end
+
+  def items
+    @items ||= []
   end
 end
