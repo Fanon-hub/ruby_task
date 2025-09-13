@@ -10,18 +10,51 @@ class Cart
 
   def initialize(owner)
     @owner = owner
-    @cart_items = {}  # { item_id => { item: Item, quantity: n } }
+    @cart_items = {}  # { number => { item: Item, quantity: n, seller: Seller } }
   end
 
+  # Override for cart contents
   def items
     @cart_items.values.flat_map { |entry| Array.new(entry[:quantity], entry[:item]) }
   end
 
-  def add(item, quantity = 1)
-    if @cart_items[item.number]
-      @cart_items[item.number][:quantity] += quantity
+  # Accept either an Array (from pick_items) or a single Item
+  def add(items_or_array, quantity = 1)
+    if items_or_array.is_a?(Array)
+      items_array = items_or_array
+      return if items_array.empty? || items_array.size < quantity
+
+      template_item = items_array.first
+      number = template_item.number
+      seller = template_item.owner
+
+      if @cart_items[number]
+        @cart_items[number][:quantity] += quantity
+      else
+        cart_copies = items_array[0, quantity].map do |stock_item|
+          Item.new(stock_item.number, stock_item.name, stock_item.price, 1, self)
+        end
+        @cart_items[number] = { item: cart_copies.first, quantity: quantity, seller: seller }
+      end
+
+    elsif items_or_array.is_a?(Item)
+      item = items_or_array
+      number = item.number
+      seller = item.owner
+
+      if @cart_items[number]
+        @cart_items[number][:quantity] += quantity
+      else
+        @cart_items[number] = {
+          item: Item.new(item.number, item.name, item.price, 1, self),
+          quantity: quantity,
+          seller: seller
+        }
+      end
+
     else
-      @cart_items[item.number] = { item: item, quantity: quantity }
+      # invalid input; ignore
+      return
     end
   end
 
@@ -42,23 +75,27 @@ class Cart
   def check_out
     total = total_amount
     if owner.wallet.balance < total
-      puts "⚠️ Not enough balance"
+      puts "⚠️ Not enough balance to complete checkout."
       return
     end
 
-    # Transfer money
+    # Pay each seller the amount for their items (if we stored seller at add time)
     @cart_items.each_value do |entry|
-      entry[:item].owner.wallet.deposit(entry[:item].price * entry[:quantity])
+      seller = entry[:seller]
+      if seller && seller.respond_to?(:wallet)
+        seller.wallet.deposit(entry[:item].price * entry[:quantity])
+      end
     end
+
     owner.wallet.withdraw(total)
 
-    # Transfer ownership
+    # Transfer ownership to customer
     items.each do |item|
       new_item = Item.new(item.number, item.name, item.price, 1, owner)
       owner.add_item(new_item)
     end
 
     @cart_items.clear
-    puts "🎉 Checkout complete!"
+    puts "🎉 Checkout successful!"
   end
 end

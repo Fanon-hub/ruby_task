@@ -4,7 +4,7 @@ require "kosi"
 module ItemManager
   # Return all items owned by this owner
   def items
-    Item.instances.select { |item| item.owner == self }
+    Array(@cart_items&.values).flat_map { |entry| Array.new(entry[:quantity], entry[:item]) }
   end
 
   # Return items of given number and quantity
@@ -17,11 +17,13 @@ module ItemManager
 
   # Display grouped items in a table
   def items_list
-    return puts "No items." if items.empty?
+    all_items = items || []
+    return puts "No items." if all_items.empty?
 
-    grouped = items.group_by { |i| i.label.merge(number: i.number) }
-    rows = grouped.map do |label, group|
-      [label[:number], label[:name], label[:price], group.size]
+    grouped = all_items.group_by(&:number)
+    rows = grouped.map do |number, group|
+      first_item = group.first
+      [first_item.number, first_item.name, first_item.price, group.size]
     end
 
     table = Kosi::Table.new(header: %w{Item\ Number Item\ Name Amount Quantity})

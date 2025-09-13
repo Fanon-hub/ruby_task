@@ -6,3 +6,4 @@ gem "rexml"
 gem "rspec"
 gem "factory_bot"
 gem "terminal-table"
+gem 'bundler'
