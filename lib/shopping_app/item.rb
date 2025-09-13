@@ -1,19 +1,16 @@
-require_relative "ownable"
-
 class Item
-  include Ownable
-
+  # Item is a simple value object — it shouldn't include Ownable (it is owned).
   attr_reader :name, :price
-  attr_accessor :number, :quantity, :owner  # Add :owner here for @owner support
+  attr_accessor :number, :quantity, :owner
 
   @@instances = []
 
   def initialize(number, name, price, quantity = 1, owner = nil)
     @number = number
     @name = name
-    @price = price
-    @quantity = quantity
-    self.owner = owner  # Now works with attr_accessor
+    @price = price.to_i
+    @quantity = quantity.to_i
+    @owner = owner
     @@instances << self
   end
 
@@ -21,10 +18,12 @@ class Item
     @number
   end
 
+  # Return a hash of this item's label data
   def label
     { name: @name, price: @price }
   end
 
+  # All instantiated Item objects
   def self.instances
     @@instances
   end

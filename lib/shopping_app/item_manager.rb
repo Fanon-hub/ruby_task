@@ -1,13 +1,15 @@
-require_relative "item"
+\require_relative "item"
 require "kosi"
 
 module ItemManager
-  # Return all items owned by this owner
+  # Return all Item objects for which `self` is the owner.
+  # Uses Item.instances so this works for Seller, Customer, Cart, etc.
   def items
-    Array(@cart_items&.values).flat_map { |entry| Array.new(entry[:quantity], entry[:item]) }
+    Item.instances.select { |i| i.owner == self }
   end
 
-  # Return items of given number and quantity
+  # Return an array of items matching product `number`, up to `quantity`.
+  # Returns nil for invalid quantity or if not enough owned items are available.
   def pick_items(number, quantity)
     return nil if quantity <= 0
     owned_items = items.select { |i| i.number == number }
@@ -15,9 +17,9 @@ module ItemManager
     owned_items[0, quantity]
   end
 
-  # Display grouped items in a table
+  # Display grouped items in a table, grouped by product number (label), with quantities
   def items_list
-    all_items = items || []
+    all_items = items
     return puts "No items." if all_items.empty?
 
     grouped = all_items.group_by(&:number)
