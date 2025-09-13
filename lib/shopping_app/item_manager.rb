@@ -1,45 +1,30 @@
 require_relative "item"
 require "kosi"
 
-# By including this module, you can manipulate your own Item instances.
 module ItemManager
-
+  # Return all items owned by this owner
   def items
     Item.instances.select { |item| item.owner == self }
   end
 
-  
-  # Returns nil if quantity <= 0 or if requested number of items is not available
+  # Return items of given number and quantity
   def pick_items(number, quantity)
     return nil if quantity <= 0
-
-    # Select items that match the given number and belong to self
-    matching_items = items.select { |item| item.number == number }
-
-    # Return nil if no items found or not enough items
-    return nil if matching_items.empty? || matching_items.size < quantity
-
-    matching_items[0, quantity]  # Return the first 'quantity' items
+    owned_items = items.select { |i| i.number == number }
+    return nil if owned_items.empty? || owned_items.size < quantity
+    owned_items[0, quantity]
   end
 
-  
+  # Display grouped items in a table
   def items_list
-    # Initialize Kosi table with headers
-    kosi = Kosi::Table.new({ header: %w{Item\ Number Item\ Name Amount Quantity} })
+    return puts "No items." if items.empty?
 
-    # Group owned items by label (name & price) and count quantities
-    grouped_data = items
-      .group_by { |item| item.label.merge(number: item.number) } # Groups by number, name, price
-      .map do |label, group_items|
-        [
-          label[:number],
-          label[:name],
-          label[:price],
-          group_items.size  # Quantity is count of grouped items
-        ]
-      end
+    grouped = items.group_by { |i| i.label.merge(number: i.number) }
+    rows = grouped.map do |label, group|
+      [label[:number], label[:name], label[:price], group.size]
+    end
 
-    # Print the table
-    print kosi.render(grouped_data)
+    table = Kosi::Table.new(header: %w{Item\ Number Item\ Name Amount Quantity})
+    print table.render(rows)
   end
 end
