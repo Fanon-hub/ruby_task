@@ -3,22 +3,22 @@ require_relative "ownable"
 require_relative "item_manager"
 
 class Cart
-  include Ownable       # keep Ownable for @items/ownership convenience
-  include ItemManager   # ItemManager#items will be used as the canonical items list
+  include Ownable       # Provides @items management and add_item for ownership
+  include ItemManager   # For items and pick_items
 
   attr_reader :owner
 
   def initialize(owner)
     @owner = owner
-    # array of Item objects owned temporarily by the cart (owner = self)
-    @items = []
-    # mapping to remember original seller for each cart item
-    @item_sources = {} # { cart_item.object_id => seller }
+    @items = []  # Explicit init (Ownable may also set it)
+    @item_sources = {}  # Track original owners
   end
 
-  # For convenience tests may inspect @items directly; ItemManager#items uses Item.instances
-  # and will pick up items whose owner == self (cart), since we create cart copies with owner = self.
-  # Add picks either an Array (seller.pick_items) or a single Item.
+  # Override to return internal @items
+  def items
+    @items
+  end
+
   def add(items_or_item, quantity = 1)
     if items_or_item.is_a?(Array)
       items_array = items_or_item
@@ -29,6 +29,7 @@ class Cart
 
       quantity.times do |i|
         stock_item = items_array[i] || template
+        # Create copy for cart, set temp owner to self (Cart)
         cart_copy = Item.new(stock_item.number, stock_item.name, stock_item.price, 1, self)
         @items << cart_copy
         @item_sources[cart_copy.object_id] = seller
@@ -39,23 +40,21 @@ class Cart
       seller = item.owner
 
       quantity.times do
+        # Create copy for cart
         cart_copy = Item.new(item.number, item.name, item.price, 1, self)
         @items << cart_copy
         @item_sources[cart_copy.object_id] = seller
       end
 
     else
-      # invalid input; ignore
       return
     end
   end
 
-  # total price for all items currently in the cart
   def total_amount
     @items.sum { |i| i.price }
   end
 
-  # pretty-print cart contents
   def items_list
     if @items.empty?
       puts "Cart is empty."
@@ -72,39 +71,35 @@ class Cart
     puts table
   end
 
-  # Checkout:
-  #  - ensure buyer has enough balance; withdraw first
-  #  - pay each seller their aggregated amount
-  #  - transfer ownership to buyer (create owned items for buyer)
-  #  - clear the cart
   def check_out
     total = total_amount
-    # withdraw returns amount on success, nil otherwise (per your Wallet implementation)
-    unless owner.wallet.withdraw(total)
+    # Withdraw from cart owner; nil if insufficient
+    withdrawn = owner.wallet.withdraw(total)
+    unless withdrawn
       puts "⚠️ Not enough balance to complete checkout."
       return
     end
 
-    # aggregate payouts per seller
+    # Aggregate payments by original item owner (seller)
     payouts = Hash.new(0)
     @items.each do |cart_item|
-      seller = @item_sources[cart_item.object_id]
-      payouts[seller] += cart_item.price
+      original_owner = @item_sources[cart_item.object_id]
+      payouts[original_owner] += cart_item.price
     end
 
-    # pay sellers
-    payouts.each do |seller, amount|
-      next unless seller && seller.respond_to?(:wallet)
-      seller.wallet.deposit(amount)
+    # Transfer payments to item owners' wallets
+    payouts.each do |item_owner, amount|
+      next unless item_owner&.respond_to?(:wallet)
+      item_owner.wallet.deposit(amount)
     end
 
-    # transfer ownership to buyer: create new Item instances owned by buyer
+    # Transfer ownership of existing cart items to cart owner
     @items.each do |cart_item|
-      purchased = Item.new(cart_item.number, cart_item.name, cart_item.price, 1, owner)
-      owner.add_item(purchased)
+      cart_item.owner = owner  # Update owner
+      owner.add_item(cart_item)  # Store in buyer's @items (via Ownable)
     end
 
-    # clear internal state and helper mapping
+    # Empty cart contents
     @items.clear
     @item_sources.clear
 

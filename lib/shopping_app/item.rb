@@ -1,7 +1,7 @@
-require_relative "ownable"
+require_relative "ownable" 
 
 class Item
-  # Item is a simple value object — it shouldn't include Ownable (it is owned).
+  include Ownable
   attr_reader :name, :price
   attr_accessor :number, :quantity, :owner
 
