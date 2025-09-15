@@ -1,11 +1,11 @@
 # cart class 
 require "terminal-table"
-require_relative "ownable"
+# require_relative "ownable"
 require_relative "item_manager"
 require_relative "item"  # For Item class access
 
 class Cart
-  include Ownable
+  # include Ownable
   include ItemManager
 
   attr_reader :owner
