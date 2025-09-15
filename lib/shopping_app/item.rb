@@ -1,33 +1,40 @@
+require_relative "ownable"
+
 class Item
+  include Ownable
+
   attr_reader :number, :name, :price
-  attr_accessor :owner
+  attr_accessor :owner, :quantity
 
   @@instances = []
 
-  def initialize(number, name, price, quantity, owner)
+  def initialize(number, name, price, quantity = 1, owner = nil)
     @number = number
-    @name = name
-    @price = price
-    @owner = owner
-    quantity.times { @@instances << self.class.clone_item(self) }
+    @name   = name
+    @price  = price.to_i
+    @quantity = quantity.to_i
+    @owner  = owner
+
+    # register this instance (each call creates one Item instance)
+    @@instances << self
   end
 
+  # Return the id/number
+  def id
+    @number
+  end
+
+  # Return a hash describing this item
+  def label
+    { name: @name, price: @price }
+  end
+
+  def to_s
+    "Item(##{@number}, #{@name}, price: #{@price}, owner: #{@owner&.name})"
+  end
+
+  # All instantiated Item objects
   def self.instances
     @@instances
-  end
-
-  # Helper to clone items (so each stock item is unique)
-  def self.clone_item(item)
-    new_item = allocate
-    new_item.instance_variable_set(:@number, item.number)
-    new_item.instance_variable_set(:@name, item.name)
-    new_item.instance_variable_set(:@price, item.price)
-    new_item.instance_variable_set(:@owner, item.owner)
-    new_item
-  end
-
-  # 👇 Nice string representation
-  def to_s
-    "Item(##{@number}, #{@name}, price: #{@price}, owner: #{@owner.name})"
   end
 end
