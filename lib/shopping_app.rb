@@ -71,18 +71,20 @@ customer.cart.check_out if gets.chomp.downcase == "yes"
 # Final report
 # ----------------------------
 puts "\n୨୧┈┈┈┈┈┈┈┈┈┈┈┈┈Result┈┈┈┈┈┈┈┈┈┈┈┈┈୨୧"
+
 puts "\n🛍️ Items owned by #{customer.name}"
 customer.items_list
 
-puts "\n👛 #{customer.name}'s wallet balance: #{customer.wallet.balance}"
+puts "\n👛 #{customer.wallet}"
 
 puts "\n📦 #{seller.name}'s stock status"
 seller.items_list
 
-puts "\n👛 #{seller.name}'s wallet balance: #{seller.wallet.balance}"
+puts "\n👛 #{seller.wallet}"
 
 puts "\n🛒 Cart contents"
 customer.cart.items_list
 puts "🌚 Total amount: #{customer.cart.total_amount}"
 
 puts "\n🎉 End"
+

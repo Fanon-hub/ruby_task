@@ -1,9 +1,7 @@
-# wallet class
-# require_relative "ownable"
+require_relative "ownable"
 
 class Wallet
-  # include Ownable
-
+  include Ownable
   attr_reader :balance
 
   def initialize(owner)
@@ -24,4 +22,11 @@ class Wallet
       nil
     end
   end
+
+  # 👇 Nice string representation
+  def to_s
+    "Wallet(owner: #{@owner.name}, balance: #{@balance})"
+  end
 end
+
+

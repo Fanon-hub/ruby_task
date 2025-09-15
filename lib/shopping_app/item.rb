@@ -1,30 +1,33 @@
-# item class
-# require_relative "ownable"
 class Item
-  attr_reader :name, :price
-  attr_accessor :number, :quantity, :owner
-  # include Ownable
+  attr_reader :number, :name, :price
+  attr_accessor :owner
 
   @@instances = []
 
-  def initialize(number, name, price, quantity = 1, owner = nil)
+  def initialize(number, name, price, quantity, owner)
     @number = number
     @name = name
-    @price = price.to_i
-    @quantity = quantity.to_i
+    @price = price
     @owner = owner
-    @@instances << self
-  end
-
-  def id
-    @number
-  end
-
-  def label
-    { name: @name, price: @price }
+    quantity.times { @@instances << self.class.clone_item(self) }
   end
 
   def self.instances
     @@instances
+  end
+
+  # Helper to clone items (so each stock item is unique)
+  def self.clone_item(item)
+    new_item = allocate
+    new_item.instance_variable_set(:@number, item.number)
+    new_item.instance_variable_set(:@name, item.name)
+    new_item.instance_variable_set(:@price, item.price)
+    new_item.instance_variable_set(:@owner, item.owner)
+    new_item
+  end
+
+  # 👇 Nice string representation
+  def to_s
+    "Item(##{@number}, #{@name}, price: #{@price}, owner: #{@owner.name})"
   end
 end
