@@ -11,8 +11,14 @@ class Cart
 
   def initialize(owner)
     @owner = owner
+    @items = []  # Override ItemManager's items storage
     # map each cart item (object_id) to its original seller
     @item_sources = {}  # { item.object_id => seller }
+  end
+
+  # Override ItemManager#items to return our @items array
+  def items
+    @items
   end
 
   # Add either:
@@ -31,6 +37,7 @@ class Cart
       quantity.times do |i|
         stock_item = items_array[i] || items_array.first
         cart_copy = Item.new(stock_item.number, stock_item.name, stock_item.price, 1, self)
+        @items << cart_copy  # Add to our @items array
         @item_sources[cart_copy.object_id] = seller
       end
 
@@ -40,6 +47,7 @@ class Cart
 
       quantity.times do
         cart_copy = Item.new(item.number, item.name, item.price, 1, self)
+        @items << cart_copy  # Add to our @items array
         @item_sources[cart_copy.object_id] = seller
       end
 
@@ -49,19 +57,19 @@ class Cart
     end
   end
 
-  # Total price for all items in the cart
+  # Return the total price of the Item objects stored in @items
   def total_amount
-    items.sum { |i| i.price }
+    @items.sum { |item| item.price }
   end
 
   # Pretty-print cart contents
   def items_list
-    if items.empty?
+    if @items.empty?
       puts "Cart is empty."
       return
     end
 
-    grouped = items.group_by(&:number)
+    grouped = @items.group_by(&:number)
     rows = grouped.map do |number, group|
       it = group.first
       [it.number, it.name, it.price, group.size]
@@ -80,24 +88,27 @@ class Cart
       return
     end
 
+    # Calculate payments for each seller
     payouts = Hash.new(0)
-    items.each do |item|
+    @items.each do |item|
       seller = @item_sources[item.object_id]
       payouts[seller] += item.price if seller
     end
 
+    # Transfer the purchase amount from cart owner's wallet to item owner's wallet
     payouts.each do |seller, amount|
       next unless seller && seller.respond_to?(:wallet)
       seller.wallet.deposit(amount)
     end
 
-    # transfer ownership: mark cart items as owned by buyer and add to buyer's collection
-    items.each do |item|
+    # Transfer ownership of all items in the cart to the cart owner
+    @items.each do |item|
       item.owner = owner
       owner.add_item(item) if owner.respond_to?(:add_item)
     end
 
-    # clear cart bookkeeping
+    # Empty the cart contents (Cart#items)
+    @items.clear
     @item_sources.clear
 
     puts "🎉 Checkout successful!"
