@@ -1,5 +1,0 @@
-point: 1 comment: Poor experience, needs work.
-point: 4 comment: Very good, but room for improvement.
-point: 5 comment: Fantastic service!
-point：4　comment：Fantastic Experience
-point：5　comment：Great Experience. I would love to try it again.
